@@ -966,6 +966,28 @@ void NoiseReduction::ProfileNoise(size_t t0, size_t t1) {
     LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
 }
 
+void NoiseReduction::ProfileNoise(SndContext &context) {
+//    LOG_SCOPE_F(INFO, "Profiling noise for {%zd, %zd}", t0, t1);
+
+    NoiseReduction::Settings profileSettings(mSettings);
+    profileSettings.mDoProfile = true;
+    NoiseReductionWorker profileWorker(profileSettings, context.info.samplerate);
+
+    for (int i = 0; i < context.info.channels; i++) {
+        InputTrack inputTrack(context, i, 0, 20000);
+        if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
+            throw std::runtime_error("Cannot process channel");
+        }
+    }
+
+    if (this->mStatistics->mTotalWindows == 0) {
+        LOG_F(ERROR, "Selected noise profile is too short.");
+        throw std::invalid_argument("Selected noise profile is too short.");
+    }
+
+    LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
+}
+
 void NoiseReduction::ReduceNoise(const char* outputPath) {
     return this->ReduceNoise(outputPath, 0, (size_t)mCtx.info.frames);
 
