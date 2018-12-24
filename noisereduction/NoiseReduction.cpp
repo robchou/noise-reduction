@@ -135,18 +135,16 @@ struct OutputTrack {
 
 struct InputTrack {
     int channel;
-    size_t t0;
-    size_t t1;
     size_t position;
     SndContext& ctx;
 
-    InputTrack(SndContext& ctx, int channel, size_t t0, size_t t1):
-       ctx(ctx), channel(channel), t0(t0), t1(t1), position(t0) {
-        sf_seek(ctx.file, t0, SEEK_SET);
+    InputTrack(SndContext& ctx, int channel):
+       ctx(ctx), channel(channel), position(0) {
+        sf_seek(ctx.file, 0, SEEK_SET);
     }
 
     size_t length() {
-        return t1 - t0;
+        return ctx.info.frames;
     }
 
     size_t Read(float* buffer, size_t length) {
@@ -156,7 +154,7 @@ struct InputTrack {
         // can only read full frames from libsnd.
         // will probably be a lot faster to read the whole thing and then split it
         for (int i = 0; i < length; i++) {
-            if (this->position >= t1) {
+            if (this->position >= ctx.info.frames) {
                 break;
             }
 
@@ -952,7 +950,7 @@ void NoiseReduction::ProfileNoise(size_t t0, size_t t1) {
     NoiseReductionWorker profileWorker(profileSettings, mCtx.info.samplerate);
 
     for (int i = 0; i < this->mCtx.info.channels; i++) {
-        InputTrack inputTrack(this->mCtx, i, t0, t1);
+        InputTrack inputTrack(this->mCtx, i);
         if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
             throw std::runtime_error("Cannot process channel");
         }
@@ -974,7 +972,7 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
     NoiseReductionWorker profileWorker(profileSettings, context.info.samplerate);
 
     for (int i = 0; i < context.info.channels; i++) {
-        InputTrack inputTrack(context, i, 0, 20000);
+        InputTrack inputTrack(context, i);
         if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
             throw std::runtime_error("Cannot process channel");
         }
@@ -988,13 +986,13 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
     LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
 }
 
+//void NoiseReduction::ReduceNoise(const char* outputPath) {
+//    return this->ReduceNoise(outputPath, 0, (size_t)mCtx.info.frames);
+//
+//}
+
 void NoiseReduction::ReduceNoise(const char* outputPath) {
-    return this->ReduceNoise(outputPath, 0, (size_t)mCtx.info.frames);
-
-}
-
-void NoiseReduction::ReduceNoise(const char* outputPath, size_t t0, size_t t1) {
-    LOG_SCOPE_F(INFO, "Reducing noise for {%zd, %zd}", t0, t1);
+//    LOG_SCOPE_F(INFO, "Reducing noise for {%zd, %zd}", t0, t1);
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
     NoiseReductionWorker cleanWorker(cleanSettings, mCtx.info.samplerate);
@@ -1005,7 +1003,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath, size_t t0, size_t t1) {
         LOG_F(INFO, "Denoising channel %d", i);
 
         // create IO tracks
-        InputTrack inputTrack(this->mCtx, i, t0, t1);
+        InputTrack inputTrack(this->mCtx, i);
         outputs.emplace_back(i, this->mCtx.info.samplerate);
 
         // process channel
