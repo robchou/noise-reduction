@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <sndfile.h>
 #include <exception>
+#include <sys/stat.h>
 #include "loguru.hpp"
 #include "NoiseReduction.h"
 #include "RealFFTf.h"
@@ -134,17 +135,43 @@ struct OutputTrack {
 };
 
 struct InputTrack {
+    int16_t *pcm;
+    size_t size;
+    int channels;
     int channel;
     size_t position;
-    SndContext& ctx;
+    int frames;
+//    SndContext& ctx;
 
-    InputTrack(SndContext& ctx, int channel):
-       ctx(ctx), channel(channel), position(0) {
-        sf_seek(ctx.file, 0, SEEK_SET);
+    InputTrack(int16_t *pcm, size_t size, int channels, int channel):
+       pcm(pcm), size(size), channels(channels), channel(channel), position(0) {
+//        sf_seek(ctx.file, 0, SEEK_SET);
+        frames = size / 2;
     }
 
     size_t length() {
-        return ctx.info.frames;
+        return size / 2;
+    }
+
+    size_t read_float(int16_t *pcm, float *ptr, int channels, int frames) {
+        if (pcm == nullptr) {
+            printf("%s error: pcm is null!\n", __FUNCTION__);
+            return 0;
+        }
+
+        if (ptr == nullptr) {
+            printf("%s error: ptr is null!\n", __FUNCTION__);
+            return 0;
+        }
+
+        for (int i = 0; i < frames; ++i) {
+            for (int j = 0; j < channels; ++j) {
+                int16_t data = *(pcm + j);
+                ptr[i + j] = (float)(data) / 0x8000;
+            }
+        }
+
+        return frames;
     }
 
     size_t Read(float* buffer, size_t length) {
@@ -154,12 +181,16 @@ struct InputTrack {
         // can only read full frames from libsnd.
         // will probably be a lot faster to read the whole thing and then split it
         for (int i = 0; i < length; i++) {
-            if (this->position >= ctx.info.frames) {
+            if (this->position >= frames) {
                 break;
             }
 
-            float buffer[this->ctx.info.channels];
-            size_t read = sf_readf_float(this->ctx.file, buffer, 1);
+            if (position + channels > frames) {
+                break;
+            }
+
+            float buffer[channels];
+            size_t read = read_float(pcm + position, buffer, channels, 1);
             this->position += read;
             if (read == 0) {
                 break;
@@ -942,37 +973,35 @@ NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, SndContext& c
 
 NoiseReduction::~NoiseReduction() = default;
 
-void NoiseReduction::ProfileNoise(size_t t0, size_t t1) {
-    LOG_SCOPE_F(INFO, "Profiling noise for {%zd, %zd}", t0, t1);
-
-    NoiseReduction::Settings profileSettings(mSettings);
-    profileSettings.mDoProfile = true;
-    NoiseReductionWorker profileWorker(profileSettings, mCtx.info.samplerate);
-
-    for (int i = 0; i < this->mCtx.info.channels; i++) {
-        InputTrack inputTrack(this->mCtx, i);
-        if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
-            throw std::runtime_error("Cannot process channel");
-        }
-    }
-
-    if (this->mStatistics->mTotalWindows == 0) {
-        LOG_F(ERROR, "Selected noise profile is too short.");
-        throw std::invalid_argument("Selected noise profile is too short.");
-    }
-
-    LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
-}
-
 void NoiseReduction::ProfileNoise(SndContext &context) {
 //    LOG_SCOPE_F(INFO, "Profiling noise for {%zd, %zd}", t0, t1);
 
     NoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
     NoiseReductionWorker profileWorker(profileSettings, context.info.samplerate);
+    const char* noise_path = "/Users/robin/Desktop/noise.pcm";
+    FILE *noise = fopen(noise_path, "rb");
+    struct stat noise_stat;
+    int result = stat(noise_path, &noise_stat);
+
+    if (noise == nullptr) {
+        printf("%s error: failed to open noise.pcm!\n", __FUNCTION__);
+        return;
+    }
+
+    if (result != 0) {
+        printf("%s error: failed to stat noise.pcm!\n", __FUNCTION__);
+        return;
+    } else {
+        printf("noise.pcm is %d\n", noise_stat.st_size);
+    }
+
+    size_t pcm_size = noise_stat.st_size;
+    int16_t *pcm = (int16_t*) malloc(pcm_size);
+    fread(pcm, sizeof(int16_t), pcm_size/(sizeof(int16_t)), noise);
 
     for (int i = 0; i < context.info.channels; i++) {
-        InputTrack inputTrack(context, i);
+        InputTrack inputTrack(pcm, pcm_size, context.info.channels, i);
         if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
             throw std::runtime_error("Cannot process channel");
         }
@@ -982,6 +1011,8 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
         LOG_F(ERROR, "Selected noise profile is too short.");
         throw std::invalid_argument("Selected noise profile is too short.");
     }
+
+    fclose(noise);
 
     LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
 }
@@ -996,6 +1027,27 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
     NoiseReductionWorker cleanWorker(cleanSettings, mCtx.info.samplerate);
+    const char* noise_path = "/Users/robin/Desktop/ori.pcm";
+    FILE *noise = fopen(noise_path, "rb");
+    struct stat noise_stat;
+    int result = stat(noise_path, &noise_stat);
+
+    if (noise == nullptr) {
+        printf("%s error: failed to open ori.pcm!\n", __FUNCTION__);
+        return;
+    }
+
+    if (result != 0) {
+        printf("%s error: failed to stat ori.pcm!\n", __FUNCTION__);
+        return;
+    } else {
+        printf("ori.pcm is %d\n", noise_stat.st_size);
+    }
+
+    size_t pcm_size = noise_stat.st_size;
+    int16_t *pcm = (int16_t*) malloc(pcm_size);
+    fread(pcm, sizeof(int16_t), pcm_size/(sizeof(int16_t)), noise);
+
 
     // process all channels
     std::vector<OutputTrack> outputs;
@@ -1003,7 +1055,8 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
         LOG_F(INFO, "Denoising channel %d", i);
 
         // create IO tracks
-        InputTrack inputTrack(this->mCtx, i);
+//        InputTrack inputTrack(this->mCtx, i);
+        InputTrack inputTrack(pcm, pcm_size, this->mCtx.info.channels, i);
         outputs.emplace_back(i, this->mCtx.info.samplerate);
 
         // process channel
@@ -1011,6 +1064,8 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
             throw std::runtime_error("Cannot process channel");
         }
     }
+
+    fclose(noise);
 
 
     // write samples

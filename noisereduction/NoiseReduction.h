@@ -46,7 +46,6 @@ public:
 
     NoiseReduction(NoiseReduction::Settings& settings, SndContext& ctx);
     ~NoiseReduction();
-    void ProfileNoise(size_t t0, size_t t1);
     void ProfileNoise(SndContext& context);
 //    void ReduceNoise(const char* outputPath, size_t t0, size_t t1);
     void ReduceNoise(const char* outputPath);
