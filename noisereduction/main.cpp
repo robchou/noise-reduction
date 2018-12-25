@@ -1,8 +1,8 @@
 #include <iostream>
 #include "NoiseReduction.h"
-#include "loguru.hpp"
 #include "Utils.h"
 #include "cxxopts.hpp"
+#include "log.h"
 
 int main(int argc, char * argv[]) {
 //    cxxopts::Options options("NoiseReduction Test", "Driver for Noise Reduction");
@@ -34,6 +34,7 @@ int main(int argc, char * argv[]) {
 //
 //    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
+    Log::SetLogLevel(LOG_VERBOSE);
     const char* out = "/Users/robin/Desktop/out.pcm";
 
     SndInfo inputCtxInfo;

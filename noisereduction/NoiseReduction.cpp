@@ -25,16 +25,17 @@
   the output signal is then pieced together using overlap/add.
 *//****************************************************************//**
 */
+#define LOG_TAG "NoiseReduction"
 #include "NoiseReduction.h"
 #include <string.h>
 #include <math.h>
 #include <assert.h>
 #include <exception>
 #include <sys/stat.h>
-#include "loguru.hpp"
 #include "NoiseReduction.h"
 #include "RealFFTf.h"
 #include "types.h"
+#include "log.h"
 
 //const auto OUTPUT_FORMAT = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
@@ -110,7 +111,7 @@ struct OutputTrack {
 
     void Append(float* buffer, size_t count) {
         length += count;
-        LOG_F(9, "[Channel %d] Appending %zd samples (%zd total)", this->channel, count, this->length);
+        Log::i(LOG_TAG, "[Channel %d] Appending %zd samples (%zd total)\n", this->channel, count, this->length);
         data.insert(data.end(), buffer, &buffer[count]);
     }
 
@@ -937,7 +938,7 @@ bool NoiseReductionWorker::ProcessOne(Statistics &statistics, InputTrack& inputT
         size_t len = inputTrack.Read(&buffer[0], BUFFER_SIZE);
 
         if (len == 0) {
-            LOG_F(WARNING, "Couldn't read data from input track");
+            Log::i(LOG_TAG, "Couldn't read data from input track\n");
             break;
         }
 
@@ -1008,13 +1009,13 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
     }
 
     if (this->mStatistics->mTotalWindows == 0) {
-        LOG_F(ERROR, "Selected noise profile is too short.");
+        Log::e(LOG_TAG, "Selected noise profile is too short.\n");
         throw std::invalid_argument("Selected noise profile is too short.");
     }
 
     fclose(noise);
 
-    LOG_F(INFO, "Total Windows: %zd", mStatistics->mTotalWindows);
+    Log::i(LOG_TAG, "Total Windows: %zd\n", mStatistics->mTotalWindows);
 }
 
 //void NoiseReduction::ReduceNoise(const char* outputPath) {
@@ -1040,7 +1041,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
     NoiseReductionWorker cleanWorker(cleanSettings, mCtx.info.samplerate);
-    const char* noise_path = "/Users/robin/Desktop/ori.pcm";
+    const char* noise_path = "/Users/robin/Desktop/short.pcm";
     FILE *noise = fopen(noise_path, "rb");
     struct stat noise_stat;
     int result = stat(noise_path, &noise_stat);
@@ -1065,7 +1066,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     // process all channels
     std::vector<OutputTrack> outputs;
     for (int i = 0; i < this->mCtx.info.channels; i++) {
-        LOG_F(INFO, "Denoising channel %d", i);
+        Log::i(LOG_TAG, "Denoising channel %d\n", i);
 
         // create IO tracks
 //        InputTrack inputTrack(this->mCtx, i);
@@ -1102,7 +1103,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     }
 
     auto frameCount = outputs[0].length;
-    LOG_F(INFO, "Writing %zd frames to disk", frameCount);
+    Log::i(LOG_TAG, "Writing %zd frames to disk\n", frameCount);
 
     // copy audio to buffer so that channels are interleaved
     const size_t bufferFrames = 1024;
