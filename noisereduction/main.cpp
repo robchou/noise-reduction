@@ -39,7 +39,6 @@ int main(int argc, char * argv[]) {
     const char* profilePath = "/Users/robin/Desktop/noise.pcm";
     const char* inputPath = "/Users/robin/Desktop/short.pcm";
     const char* outputPath = "/Users/robin/Desktop/out.pcm";
-    const char* out = "/Users/robin/Desktop/out.pcm";
 
     std::ifstream profile;
     profile.open(profilePath, std::ios::binary);
@@ -50,7 +49,7 @@ int main(int argc, char * argv[]) {
     int profileSize = profile.tellg();
     profile.seekg(std::ios::beg);
     auto profileBuffer = std::make_unique<int16_t[]>(profileSize / 2);
-    profile.read(reinterpret_cast<char *>(profileBuffer.get()), profileSize / 2);
+    profile.read(reinterpret_cast<char *>(profileBuffer.get()), profileSize);
     profile.close();
 
 
@@ -67,7 +66,32 @@ int main(int argc, char * argv[]) {
     reduction.ExtractNoiseProfile(profileBuffer.get(), profileSize);
     std::cout << "Denoising..." << std::endl;
 //    reduction.ReduceNoise(result["output"].as<std::string>().c_str());
-    reduction.ReduceNoise(out);
+    std::ifstream src;
+    std::ofstream out;
+    src.open(inputPath, std::ios::binary);
+    if (!src.is_open()) {
+        Log::e(LOG_TAG, "%s error: open %s failed!\n", inputPath);
+        return -1;
+    }
+
+    out.open(outputPath, std::ios::binary);
+
+    if (!out.is_open()) {
+        Log::e(LOG_TAG, "%s error: open %s failed!\n", outputPath);
+        return -1;
+    }
+
+    src.seekg(0, std::ios::end);
+    int srcSize = src.tellg();
+    src.seekg(std::ios::beg);
+    auto srcBuffer = std::make_unique<int16_t[]>(srcSize / 2);
+    auto outBuffer = std::make_unique<int16_t[]>(srcSize / 2);
+    src.read(reinterpret_cast<char *>(srcBuffer.get()), srcSize);
+    src.close();
+    reduction.ReduceNoise(srcBuffer.get(), outBuffer.get(), srcSize);
+
+    out.write(reinterpret_cast<const char *>(outBuffer.get()), srcSize);
+    out.close();
 
     return 0;
 }

@@ -1009,31 +1009,11 @@ size_t write_float(int16_t *pcm, const float *ptr, int frames) {
     return frames;
 }
 
-void NoiseReduction::ReduceNoise(const char* outputPath) {
+void NoiseReduction::ReduceNoise(int16_t *src, int16_t *output, int size) {
+    int16_t *pOutput = output;
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
     NoiseReductionWorker cleanWorker(cleanSettings, mSamplerate);
-    const char* noise_path = "/Users/robin/Desktop/short.pcm";
-    FILE *noise = fopen(noise_path, "rb");
-    struct stat noise_stat;
-    int result = stat(noise_path, &noise_stat);
-
-    if (noise == nullptr) {
-        Log::e(LOG_TAG, "%s error: failed to open ori.pcm!\n", __FUNCTION__);
-        return;
-    }
-
-    if (result != 0) {
-        Log::e(LOG_TAG, "%s error: failed to stat ori.pcm!\n", __FUNCTION__);
-        return;
-    } else {
-        Log::i(LOG_TAG, "ori.pcm is %d\n", noise_stat.st_size);
-    }
-
-    size_t pcm_size = noise_stat.st_size;
-    int16_t *pcm = (int16_t*) malloc(pcm_size);
-    fread(pcm, sizeof(int16_t), pcm_size/(sizeof(int16_t)), noise);
-
 
     // process all channels
     std::vector<OutputTrack> outputs;
@@ -1041,8 +1021,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
         Log::i(LOG_TAG, "Denoising channel %d\n", i);
 
         // create IO tracks
-//        InputTrack inputTrack(this->mCtx, i);
-        InputTrack inputTrack(pcm, pcm_size, mChannels, i);
+        InputTrack inputTrack(src, size, mChannels, i);
         outputs.emplace_back(i, mSamplerate);
 
         // process channel
@@ -1051,28 +1030,8 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
         }
     }
 
-    fclose(noise);
-
-
     // write samples
     auto channels = mChannels;
-//    SF_INFO info = {
-//        .channels = channels,
-//        .format = OUTPUT_FORMAT,
-//        .samplerate = mCtx.info.samplerate,
-//    };
-//
-//    SNDFILE* sf = sf_open(outputPath, SFM_WRITE, &info);
-//    if (!sf) {
-//        throw std::runtime_error("Cannot open output file");
-//    }
-
-    FILE* outputFile = fopen(outputPath, "wb");
-
-    if (outputFile == nullptr) {
-        Log::e(LOG_TAG, "%s error: failed to open %s\n", __FUNCTION__, outputPath);
-        return;
-    }
 
     auto frameCount = outputs[0].length;
     Log::i(LOG_TAG, "Writing %zd frames to disk\n", frameCount);
@@ -1081,7 +1040,6 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     const size_t bufferFrames = 1024;
     const size_t bufferSize = channels * bufferFrames;
     auto buffer = std::make_unique<float[]>(bufferSize);
-    int16_t *pcmBuffer = static_cast<int16_t *>(malloc(bufferSize * sizeof(int16_t)));
 
     int frames = 0;
 
@@ -1092,24 +1050,19 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 
         frames++;
         if (frames == bufferFrames) {
-            size_t written = write_float(pcmBuffer, buffer.get(), bufferFrames);
+            size_t written = write_float(pOutput, buffer.get(), bufferFrames);
+            pOutput += bufferFrames;
             assert(written > 0);
-            fwrite(pcmBuffer, sizeof(int16_t), frames, outputFile);
             frames = 0;
         }
     }
 
     // write remaining frames left in buffer
     if (frames > 0) {
-//        sf_count_t written = sf_writef_float(sf, buffer.get(), frames);
-        size_t written = write_float(pcmBuffer, buffer.get(), frames);
-        fwrite(pcmBuffer, sizeof(int16_t), frames, outputFile);
+        size_t written = write_float(pOutput, buffer.get(), frames);
+        pOutput += written;
         assert(written > 0);
     }
-
-//    sf_close(sf);
-    free(pcmBuffer);
-    fclose(outputFile);
 }
 
 NoiseReduction::Settings::Settings() {
