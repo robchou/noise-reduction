@@ -44,8 +44,7 @@ public:
 
     NoiseReduction(NoiseReduction::Settings& settings, int samplerate, int channels);
     ~NoiseReduction();
-    void ProfileNoise();
-//    void ReduceNoise(const char* outputPath, size_t t0, size_t t1);
+    void ExtractNoiseProfile(int16_t *profile, int size);
     void ReduceNoise(const char* outputPath);
 private:
     std::unique_ptr<Statistics> mStatistics;

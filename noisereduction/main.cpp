@@ -1,4 +1,6 @@
+#define LOG_TAG "main"
 #include <iostream>
+#include <fstream>
 #include "NoiseReduction.h"
 #include "cxxopts.hpp"
 #include "log.h"
@@ -34,7 +36,23 @@ int main(int argc, char * argv[]) {
 //    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
     Log::SetLogLevel(LOG_VERBOSE);
+    const char* profilePath = "/Users/robin/Desktop/noise.pcm";
+    const char* inputPath = "/Users/robin/Desktop/short.pcm";
+    const char* outputPath = "/Users/robin/Desktop/out.pcm";
     const char* out = "/Users/robin/Desktop/out.pcm";
+
+    std::ifstream profile;
+    profile.open(profilePath, std::ios::binary);
+    if (!profile.is_open()) {
+        Log::e(LOG_TAG, "%s error: failed to open %s\n", profilePath);
+    }
+    profile.seekg(0, std::ios::end);
+    int profileSize = profile.tellg();
+    profile.seekg(std::ios::beg);
+    auto profileBuffer = std::make_unique<int16_t[]>(profileSize / 2);
+    profile.read(reinterpret_cast<char *>(profileBuffer.get()), profileSize / 2);
+    profile.close();
+
 
     NoiseReduction::Settings settings;
 //    settings.mNewSensitivity = result["sensitivity"].as<float>();
@@ -46,7 +64,7 @@ int main(int argc, char * argv[]) {
     NoiseReduction reduction(settings, 8000, 1);
 
     std::cout << "Profiling noise..." << std::endl;
-    reduction.ProfileNoise();
+    reduction.ExtractNoiseProfile(profileBuffer.get(), profileSize);
     std::cout << "Denoising..." << std::endl;
 //    reduction.ReduceNoise(result["output"].as<std::string>().c_str());
     reduction.ReduceNoise(out);

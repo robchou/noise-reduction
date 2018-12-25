@@ -975,34 +975,14 @@ NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, int samplerat
 
 NoiseReduction::~NoiseReduction() = default;
 
-void NoiseReduction::ProfileNoise() {
+void NoiseReduction::ExtractNoiseProfile(int16_t *profile, int size) {
 
     NoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
     NoiseReductionWorker profileWorker(profileSettings, mSamplerate);
-    const char* noise_path = "/Users/robin/Desktop/noise.pcm";
-    FILE *noise = fopen(noise_path, "rb");
-    struct stat noise_stat;
-    int result = stat(noise_path, &noise_stat);
-
-    if (noise == nullptr) {
-        Log::e(LOG_TAG, "%s error: failed to open noise.pcm!\n", __FUNCTION__);
-        return;
-    }
-
-    if (result != 0) {
-        Log::e(LOG_TAG, "%s error: failed to stat noise.pcm!\n", __FUNCTION__);
-        return;
-    } else {
-        Log::e(LOG_TAG, "noise.pcm is %d\n", noise_stat.st_size);
-    }
-
-    size_t pcm_size = noise_stat.st_size;
-    int16_t *pcm = (int16_t*) malloc(pcm_size);
-    fread(pcm, sizeof(int16_t), pcm_size/(sizeof(int16_t)), noise);
 
     for (int i = 0; i < mChannels; i++) {
-        InputTrack inputTrack(pcm, pcm_size, mChannels, i);
+        InputTrack inputTrack(profile, size, mChannels, i);
         if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
             throw std::runtime_error("Cannot process channel");
         }
@@ -1012,8 +992,6 @@ void NoiseReduction::ProfileNoise() {
         Log::e(LOG_TAG, "Selected noise profile is too short.\n");
         throw std::invalid_argument("Selected noise profile is too short.");
     }
-
-    fclose(noise);
 
     Log::i(LOG_TAG, "Total Windows: %zd\n", mStatistics->mTotalWindows);
 }
