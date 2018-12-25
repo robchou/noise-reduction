@@ -3,6 +3,7 @@
 //#include "Audacity.h"
 // C++ standard header <memory> with a few extensions
 #include <memory>
+#include <cstdlib>
 
 #ifndef safenew
 #define safenew new
