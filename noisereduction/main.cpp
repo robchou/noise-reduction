@@ -1,6 +1,5 @@
 #include <iostream>
 #include "NoiseReduction.h"
-#include "Utils.h"
 #include "cxxopts.hpp"
 #include "log.h"
 
@@ -37,16 +36,6 @@ int main(int argc, char * argv[]) {
     Log::SetLogLevel(LOG_VERBOSE);
     const char* out = "/Users/robin/Desktop/out.pcm";
 
-    SndInfo inputCtxInfo;
-    inputCtxInfo.samplerate = 8000;
-    inputCtxInfo.channels = 1;
-
-    SndContext ctx;
-    ctx.info = inputCtxInfo;
-
-    SndContext noiseContext;
-    noiseContext.info = inputCtxInfo;
-
     NoiseReduction::Settings settings;
 //    settings.mNewSensitivity = result["sensitivity"].as<float>();
 //    settings.mFreqSmoothingBands = result["smoothing"].as<int>();
@@ -54,10 +43,10 @@ int main(int argc, char * argv[]) {
     settings.mNewSensitivity = 6.0;
     settings.mFreqSmoothingBands = 3,
     settings.mNoiseGain = 48;
-    NoiseReduction reduction(settings, ctx);
+    NoiseReduction reduction(settings, 8000, 1);
 
     std::cout << "Profiling noise..." << std::endl;
-    reduction.ProfileNoise(noiseContext);
+    reduction.ProfileNoise();
     std::cout << "Denoising..." << std::endl;
 //    reduction.ReduceNoise(result["output"].as<std::string>().c_str());
     reduction.ReduceNoise(out);

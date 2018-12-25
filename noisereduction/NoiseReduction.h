@@ -8,7 +8,6 @@
 #pragma once
 
 #include <memory>
-#include "Utils.h"
 #define DB_TO_LINEAR(x) (pow(10.0, (x) / 20.0))
 #define LINEAR_TO_DB(x) (20.0 * log10(x))
 
@@ -43,14 +42,14 @@ public:
         int        mMethod;
     };
 
-    NoiseReduction(NoiseReduction::Settings& settings, SndContext& ctx);
+    NoiseReduction(NoiseReduction::Settings& settings, int samplerate, int channels);
     ~NoiseReduction();
-    void ProfileNoise(SndContext& context);
+    void ProfileNoise();
 //    void ReduceNoise(const char* outputPath, size_t t0, size_t t1);
     void ReduceNoise(const char* outputPath);
 private:
     std::unique_ptr<Statistics> mStatistics;
     NoiseReduction::Settings mSettings;
-    SndContext& mCtx;
-
+    int mSamplerate;
+    int mChannels;
 };

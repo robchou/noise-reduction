@@ -964,22 +964,23 @@ bool NoiseReductionWorker::ProcessOne(Statistics &statistics, InputTrack& inputT
 
 
 
-NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, SndContext& ctx) :
+NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, int samplerate, int channels) :
     mSettings(settings),
-    mCtx(ctx)
+    mSamplerate(samplerate),
+    mChannels(channels)
 {
     size_t spectrumSize = 1 + mSettings.WindowSize() / 2;
-    mStatistics.reset(new Statistics(spectrumSize, mCtx.info.samplerate, mSettings.mWindowTypes));
+    mStatistics.reset(new Statistics(spectrumSize, mSamplerate, mSettings.mWindowTypes));
 }
 
 NoiseReduction::~NoiseReduction() = default;
 
-void NoiseReduction::ProfileNoise(SndContext &context) {
+void NoiseReduction::ProfileNoise() {
 //    LOG_SCOPE_F(INFO, "Profiling noise for {%zd, %zd}", t0, t1);
 
     NoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
-    NoiseReductionWorker profileWorker(profileSettings, context.info.samplerate);
+    NoiseReductionWorker profileWorker(profileSettings, mSamplerate);
     const char* noise_path = "/Users/robin/Desktop/noise.pcm";
     FILE *noise = fopen(noise_path, "rb");
     struct stat noise_stat;
@@ -1001,8 +1002,8 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
     int16_t *pcm = (int16_t*) malloc(pcm_size);
     fread(pcm, sizeof(int16_t), pcm_size/(sizeof(int16_t)), noise);
 
-    for (int i = 0; i < context.info.channels; i++) {
-        InputTrack inputTrack(pcm, pcm_size, context.info.channels, i);
+    for (int i = 0; i < mChannels; i++) {
+        InputTrack inputTrack(pcm, pcm_size, mChannels, i);
         if (!profileWorker.ProcessOne(*this->mStatistics, inputTrack, nullptr)) {
             throw std::runtime_error("Cannot process channel");
         }
@@ -1040,7 +1041,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 //    LOG_SCOPE_F(INFO, "Reducing noise for {%zd, %zd}", t0, t1);
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
-    NoiseReductionWorker cleanWorker(cleanSettings, mCtx.info.samplerate);
+    NoiseReductionWorker cleanWorker(cleanSettings, mSamplerate);
     const char* noise_path = "/Users/robin/Desktop/short.pcm";
     FILE *noise = fopen(noise_path, "rb");
     struct stat noise_stat;
@@ -1065,13 +1066,13 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 
     // process all channels
     std::vector<OutputTrack> outputs;
-    for (int i = 0; i < this->mCtx.info.channels; i++) {
+    for (int i = 0; i < mChannels; i++) {
         Log::i(LOG_TAG, "Denoising channel %d\n", i);
 
         // create IO tracks
 //        InputTrack inputTrack(this->mCtx, i);
-        InputTrack inputTrack(pcm, pcm_size, this->mCtx.info.channels, i);
-        outputs.emplace_back(i, this->mCtx.info.samplerate);
+        InputTrack inputTrack(pcm, pcm_size, mChannels, i);
+        outputs.emplace_back(i, mSamplerate);
 
         // process channel
         if (!cleanWorker.ProcessOne(*this->mStatistics, inputTrack, &outputs.back())) {
@@ -1083,7 +1084,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 
 
     // write samples
-    auto channels = mCtx.info.channels;
+    auto channels = mChannels;
 //    SF_INFO info = {
 //        .channels = channels,
 //        .format = OUTPUT_FORMAT,

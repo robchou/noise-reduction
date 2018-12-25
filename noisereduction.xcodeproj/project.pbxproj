@@ -58,7 +58,6 @@
 		3FA92D8F1FFA4E8B00E0896E /* catch.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = catch.hpp; sourceTree = "<group>"; };
 		3FA92D901FFA4E9D00E0896E /* test_main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_main.cpp; sourceTree = "<group>"; };
 		3FA92D9D1FFA4ECC00E0896E /* tests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tests; sourceTree = BUILT_PRODUCTS_DIR; };
-		3FA92DA21FFB5ADF00E0896E /* Utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Utils.h; sourceTree = "<group>"; };
 		3FA92DA41FFB5B2300E0896E /* NoiseReduction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NoiseReduction.h; sourceTree = "<group>"; };
 		3FA92DA51FFB5B3F00E0896E /* test_audacity.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = test_audacity.cpp; sourceTree = "<group>"; };
 		3FA92DA91FFB5D9A00E0896E /* dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "dtmf-noise-mono-audacity-gain-39-sensitivity-16-smooth-0.wav"; sourceTree = "<group>"; };
@@ -120,7 +119,6 @@
 				3FA92D881FF750C100E0896E /* Types.h */,
 				3FA92D8B1FF8E5F900E0896E /* NoiseReduction.cpp */,
 				3FA92DA41FFB5B2300E0896E /* NoiseReduction.h */,
-				3FA92DA21FFB5ADF00E0896E /* Utils.h */,
 				67A69A09417BA1AA7193BBC7 /* log.cpp */,
 				67A6953BCBE4B542DFFB835D /* log.h */,
 			);
