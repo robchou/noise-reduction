@@ -1065,6 +1065,10 @@ void NoiseReduction::ReduceNoise(int16_t *src, int16_t *output, int size) {
     }
 }
 
+const char* NoiseReduction::GetSdkVersion() {
+    return "0.0.0.1";
+}
+
 NoiseReduction::Settings::Settings() {
     mDoProfile = false;
 

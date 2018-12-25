@@ -46,6 +46,7 @@ public:
     ~NoiseReduction();
     void ExtractNoiseProfile(int16_t *profile, int size);
     void ReduceNoise(int16_t *src, int16_t *output, int size);
+    static const char* GetSdkVersion();
 private:
     std::unique_ptr<Statistics> mStatistics;
     NoiseReduction::Settings mSettings;
