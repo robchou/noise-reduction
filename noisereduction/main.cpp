@@ -35,11 +35,20 @@ int main(int argc, char * argv[]) {
 //
 //    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
-    const char* input = "/Users/robin/Desktop/ori.wav";
     const char* out = "/Users/robin/Desktop/out.pcm";
 
-    auto ctx = openAudioFile(input);
-    auto noiseContext = openAudioFile("/Users/robin/Desktop/ori_noise.wav");
+    SndInfo inputCtxInfo = SndInfo {
+        .channels = 1,
+        .samplerate = 8000,
+    };
+
+    auto ctx = SndContext {
+        .info = inputCtxInfo,
+    };
+
+    auto noiseContext = SndContext {
+        .info = inputCtxInfo,
+    };
 
     NoiseReduction::Settings settings;
 //    settings.mNewSensitivity = result["sensitivity"].as<float>();
