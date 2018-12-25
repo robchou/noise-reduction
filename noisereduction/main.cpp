@@ -10,16 +10,17 @@ int main(int argc, char * argv[]) {
     options.add_options()
         ("i,input", "Input file (required)", cxxopts::value<std::string>())
         ("o,output", "Output file (required)", cxxopts::value<std::string>())
+        ("n,noise", "Noise profile file (required)", cxxopts::value<std::string>())
         ("noiseGain", "Noise Gain (dB)", cxxopts::value<float>()->default_value("48"))
         ("sensitivity", "Sensitivity", cxxopts::value<float>()->default_value("6.0"))
         ("smoothing", "Frequency Smoothing (bands)", cxxopts::value<int>()->default_value("3"))
         ("verbose", "Verbose Output");
 
-    options.parse_positional(std::vector<std::string>{"input", "output"});
+    options.parse_positional(std::vector<std::string>{"input", "output", "noise"});
 
     int unparsedArgc = argc;
     auto result = options.parse(unparsedArgc, argv);
-    if (!result.count("input") || !result.count("output")) {
+    if (!result.count("input") || !result.count("output") || !result.count("noise")) {
         auto help = options.help();
         std::cout << help << std::endl;
         return 1;
@@ -32,14 +33,12 @@ int main(int argc, char * argv[]) {
     std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
     Log::SetLogLevel(LOG_VERBOSE);
-    const char* profilePath = "/Users/robin/Desktop/noise.pcm";
-//    const char* inputPath = "/Users/robin/Desktop/short.pcm";
-//    const char* outputPath = "/Users/robin/Desktop/out.pcm";
 
+    std::string profilePath = result["noise"].as<std::string>();
     std::ifstream profile;
     profile.open(profilePath, std::ios::binary);
     if (!profile.is_open()) {
-        Log::e(LOG_TAG, "%s error: failed to open %s\n", profilePath);
+        Log::e(LOG_TAG, "%s error: failed to open %s\n", profilePath.c_str());
     }
     profile.seekg(0, std::ios::end);
     int profileSize = profile.tellg();
@@ -53,15 +52,11 @@ int main(int argc, char * argv[]) {
     settings.mNewSensitivity = result["sensitivity"].as<float>();
     settings.mFreqSmoothingBands = result["smoothing"].as<int>();
     settings.mNoiseGain = result["noiseGain"].as<float>();
-//    settings.mNewSensitivity = 6.0;
-//    settings.mFreqSmoothingBands = 3,
-//    settings.mNoiseGain = 24;
     NoiseReduction reduction(settings, 8000, 1);
 
     std::cout << "Profiling noise..." << std::endl;
     reduction.ExtractNoiseProfile(profileBuffer.get(), profileSize);
     std::cout << "Denoising..." << std::endl;
-//    reduction.ReduceNoise(result["output"].as<std::string>().c_str());
     std::ifstream src;
     std::ofstream out;
     std::string inputPath = result["input"].as<std::string>();
