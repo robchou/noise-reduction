@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #ifndef LOG_TAG
-#define LOG_TAG "CloseliCoreService"
+#define LOG_TAG "LIBNOISE_REDUCTION"
 #endif /* ifndef LOG_TAG */
 
 typedef enum {
