@@ -156,12 +156,12 @@ struct InputTrack {
 
     size_t read_float(int16_t *pcm, float *ptr, int channels, int frames) {
         if (pcm == nullptr) {
-            printf("%s error: pcm is null!\n", __FUNCTION__);
+            Log::e(LOG_TAG, "%s error: pcm is null!\n", __FUNCTION__);
             return 0;
         }
 
         if (ptr == nullptr) {
-            printf("%s error: ptr is null!\n", __FUNCTION__);
+            Log::e(LOG_TAG, "%s error: ptr is null!\n", __FUNCTION__);
             return 0;
         }
 
@@ -976,7 +976,6 @@ NoiseReduction::NoiseReduction(NoiseReduction::Settings& settings, int samplerat
 NoiseReduction::~NoiseReduction() = default;
 
 void NoiseReduction::ProfileNoise() {
-//    LOG_SCOPE_F(INFO, "Profiling noise for {%zd, %zd}", t0, t1);
 
     NoiseReduction::Settings profileSettings(mSettings);
     profileSettings.mDoProfile = true;
@@ -987,15 +986,15 @@ void NoiseReduction::ProfileNoise() {
     int result = stat(noise_path, &noise_stat);
 
     if (noise == nullptr) {
-        printf("%s error: failed to open noise.pcm!\n", __FUNCTION__);
+        Log::e(LOG_TAG, "%s error: failed to open noise.pcm!\n", __FUNCTION__);
         return;
     }
 
     if (result != 0) {
-        printf("%s error: failed to stat noise.pcm!\n", __FUNCTION__);
+        Log::e(LOG_TAG, "%s error: failed to stat noise.pcm!\n", __FUNCTION__);
         return;
     } else {
-        printf("noise.pcm is %d\n", noise_stat.st_size);
+        Log::e(LOG_TAG, "noise.pcm is %d\n", noise_stat.st_size);
     }
 
     size_t pcm_size = noise_stat.st_size;
@@ -1019,14 +1018,9 @@ void NoiseReduction::ProfileNoise() {
     Log::i(LOG_TAG, "Total Windows: %zd\n", mStatistics->mTotalWindows);
 }
 
-//void NoiseReduction::ReduceNoise(const char* outputPath) {
-//    return this->ReduceNoise(outputPath, 0, (size_t)mCtx.info.frames);
-//
-//}
-
 size_t write_float(int16_t *pcm, const float *ptr, int frames) {
     if (pcm == nullptr) {
-        printf("%s error: output pcm buffer is null!\n", __FUNCTION__);
+        Log::e(LOG_TAG, "%s error: output pcm buffer is null!\n", __FUNCTION__);
         return 0;
     }
 
@@ -1038,7 +1032,6 @@ size_t write_float(int16_t *pcm, const float *ptr, int frames) {
 }
 
 void NoiseReduction::ReduceNoise(const char* outputPath) {
-//    LOG_SCOPE_F(INFO, "Reducing noise for {%zd, %zd}", t0, t1);
     NoiseReduction::Settings cleanSettings(mSettings);
     cleanSettings.mDoProfile = false;
     NoiseReductionWorker cleanWorker(cleanSettings, mSamplerate);
@@ -1048,15 +1041,15 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     int result = stat(noise_path, &noise_stat);
 
     if (noise == nullptr) {
-        printf("%s error: failed to open ori.pcm!\n", __FUNCTION__);
+        Log::e(LOG_TAG, "%s error: failed to open ori.pcm!\n", __FUNCTION__);
         return;
     }
 
     if (result != 0) {
-        printf("%s error: failed to stat ori.pcm!\n", __FUNCTION__);
+        Log::e(LOG_TAG, "%s error: failed to stat ori.pcm!\n", __FUNCTION__);
         return;
     } else {
-        printf("ori.pcm is %d\n", noise_stat.st_size);
+        Log::i(LOG_TAG, "ori.pcm is %d\n", noise_stat.st_size);
     }
 
     size_t pcm_size = noise_stat.st_size;
@@ -1099,7 +1092,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     FILE* outputFile = fopen(outputPath, "wb");
 
     if (outputFile == nullptr) {
-        printf("%s error: failed to open %s\n", __FUNCTION__, outputPath);
+        Log::e(LOG_TAG, "%s error: failed to open %s\n", __FUNCTION__, outputPath);
         return;
     }
 
