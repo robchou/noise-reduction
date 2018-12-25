@@ -6,39 +6,35 @@
 #include "log.h"
 
 int main(int argc, char * argv[]) {
-//    cxxopts::Options options("NoiseReduction Test", "Driver for Noise Reduction");
-//    options.add_options()
-//        ("i,input", "Input file (required)", cxxopts::value<std::string>())
-//        ("o,output", "Output file (required)", cxxopts::value<std::string>())
-//        ("noiseGain", "Noise Gain (dB)", cxxopts::value<float>()->default_value("48"))
-//        ("sensitivity", "Sensitivity", cxxopts::value<float>()->default_value("6.0"))
-//        ("smoothing", "Frequency Smoothing (bands)", cxxopts::value<int>()->default_value("3"))
-//        ("verbose", "Verbose Output");
-//
-//    options.parse_positional(std::vector<std::string>{"input", "output"});
+    cxxopts::Options options("NoiseReduction Test", "Driver for Noise Reduction");
+    options.add_options()
+        ("i,input", "Input file (required)", cxxopts::value<std::string>())
+        ("o,output", "Output file (required)", cxxopts::value<std::string>())
+        ("noiseGain", "Noise Gain (dB)", cxxopts::value<float>()->default_value("48"))
+        ("sensitivity", "Sensitivity", cxxopts::value<float>()->default_value("6.0"))
+        ("smoothing", "Frequency Smoothing (bands)", cxxopts::value<int>()->default_value("3"))
+        ("verbose", "Verbose Output");
 
-//    int unparsedArgc = argc;
-//    auto result = options.parse(unparsedArgc, argv);
-//    if (!result.count("input") || !result.count("output")) {
-//        auto help = options.help();
-//        std::cout << help << std::endl;
-//        return 1;
-//    }
-//
-//    loguru::g_stderr_verbosity = loguru::Verbosity_ERROR;
-//    if (result["verbose"].count()) {
-//        loguru::g_stderr_verbosity = loguru::Verbosity_1;
-//    }
-//
-//    loguru::init(argc, argv);
-//
-//
-//    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
+    options.parse_positional(std::vector<std::string>{"input", "output"});
+
+    int unparsedArgc = argc;
+    auto result = options.parse(unparsedArgc, argv);
+    if (!result.count("input") || !result.count("output")) {
+        auto help = options.help();
+        std::cout << help << std::endl;
+        return 1;
+    }
+
+    if (result["verbose"].count()) {
+        Log::SetLogLevel(LOG_VERBOSE);
+    }
+
+    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
     Log::SetLogLevel(LOG_VERBOSE);
     const char* profilePath = "/Users/robin/Desktop/noise.pcm";
-    const char* inputPath = "/Users/robin/Desktop/short.pcm";
-    const char* outputPath = "/Users/robin/Desktop/out.pcm";
+//    const char* inputPath = "/Users/robin/Desktop/short.pcm";
+//    const char* outputPath = "/Users/robin/Desktop/out.pcm";
 
     std::ifstream profile;
     profile.open(profilePath, std::ios::binary);
@@ -54,12 +50,12 @@ int main(int argc, char * argv[]) {
 
 
     NoiseReduction::Settings settings;
-//    settings.mNewSensitivity = result["sensitivity"].as<float>();
-//    settings.mFreqSmoothingBands = result["smoothing"].as<int>();
-//    settings.mNoiseGain = result["noiseGain"].as<float>();
-    settings.mNewSensitivity = 6.0;
-    settings.mFreqSmoothingBands = 3,
-    settings.mNoiseGain = 48;
+    settings.mNewSensitivity = result["sensitivity"].as<float>();
+    settings.mFreqSmoothingBands = result["smoothing"].as<int>();
+    settings.mNoiseGain = result["noiseGain"].as<float>();
+//    settings.mNewSensitivity = 6.0;
+//    settings.mFreqSmoothingBands = 3,
+//    settings.mNoiseGain = 24;
     NoiseReduction reduction(settings, 8000, 1);
 
     std::cout << "Profiling noise..." << std::endl;
@@ -68,16 +64,18 @@ int main(int argc, char * argv[]) {
 //    reduction.ReduceNoise(result["output"].as<std::string>().c_str());
     std::ifstream src;
     std::ofstream out;
+    std::string inputPath = result["input"].as<std::string>();
     src.open(inputPath, std::ios::binary);
     if (!src.is_open()) {
-        Log::e(LOG_TAG, "%s error: open %s failed!\n", inputPath);
+        Log::e(LOG_TAG, "%s error: open %s failed!\n", inputPath.c_str());
         return -1;
     }
 
+    std::string outputPath = result["output"].as<std::string>();
     out.open(outputPath, std::ios::binary);
 
     if (!out.is_open()) {
-        Log::e(LOG_TAG, "%s error: open %s failed!\n", outputPath);
+        Log::e(LOG_TAG, "%s error: open %s failed!\n", outputPath.c_str());
         return -1;
     }
 
