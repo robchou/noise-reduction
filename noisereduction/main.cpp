@@ -36,7 +36,7 @@ int main(int argc, char * argv[]) {
 //    std::cout << "Processing " << result["input"].as<std::string>() << " -> " << result["output"].as<std::string>() << std::endl;
 
     const char* input = "/Users/robin/Desktop/ori.wav";
-    const char* out = "/Users/robin/Desktop/out.wav";
+    const char* out = "/Users/robin/Desktop/out.pcm";
 
     auto ctx = openAudioFile(input);
     auto noiseContext = openAudioFile("/Users/robin/Desktop/ori_noise.wav");

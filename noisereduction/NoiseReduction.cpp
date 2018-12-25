@@ -1022,6 +1022,19 @@ void NoiseReduction::ProfileNoise(SndContext &context) {
 //
 //}
 
+size_t write_float(int16_t *pcm, const float *ptr, int frames) {
+    if (pcm == nullptr) {
+        printf("%s error: output pcm buffer is null!\n", __FUNCTION__);
+        return 0;
+    }
+
+    for (int i = 0; i < frames; ++i) {
+        *(pcm + i) = ptr[i] * 0x7FFF;
+    }
+
+    return frames;
+}
+
 void NoiseReduction::ReduceNoise(const char* outputPath) {
 //    LOG_SCOPE_F(INFO, "Reducing noise for {%zd, %zd}", t0, t1);
     NoiseReduction::Settings cleanSettings(mSettings);
@@ -1070,15 +1083,22 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 
     // write samples
     auto channels = mCtx.info.channels;
-    SF_INFO info = {
-        .channels = channels,
-        .format = OUTPUT_FORMAT,
-        .samplerate = mCtx.info.samplerate,
-    };
+//    SF_INFO info = {
+//        .channels = channels,
+//        .format = OUTPUT_FORMAT,
+//        .samplerate = mCtx.info.samplerate,
+//    };
+//
+//    SNDFILE* sf = sf_open(outputPath, SFM_WRITE, &info);
+//    if (!sf) {
+//        throw std::runtime_error("Cannot open output file");
+//    }
 
-    SNDFILE* sf = sf_open(outputPath, SFM_WRITE, &info);
-    if (!sf) {
-        throw std::runtime_error("Cannot open output file");
+    FILE* outputFile = fopen(outputPath, "wb");
+
+    if (outputFile == nullptr) {
+        printf("%s error: failed to open %s\n", outputPath);
+        return;
     }
 
     auto frameCount = outputs[0].length;
@@ -1088,6 +1108,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     const size_t bufferFrames = 1024;
     const size_t bufferSize = channels * bufferFrames;
     auto buffer = std::make_unique<float[]>(bufferSize);
+    int16_t *pcmBuffer = static_cast<int16_t *>(malloc(bufferSize * sizeof(int16_t)));
 
     int frames = 0;
 
@@ -1098,19 +1119,24 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
 
         frames++;
         if (frames == bufferFrames) {
-            sf_count_t written = sf_writef_float(sf, buffer.get(), bufferFrames);
+            size_t written = write_float(pcmBuffer, buffer.get(), bufferFrames);
             assert(written > 0);
+            fwrite(pcmBuffer, sizeof(int16_t), frames, outputFile);
             frames = 0;
         }
     }
 
     // write remaining frames left in buffer
     if (frames > 0) {
-        sf_count_t written = sf_writef_float(sf, buffer.get(), frames);
+//        sf_count_t written = sf_writef_float(sf, buffer.get(), frames);
+        size_t written = write_float(pcmBuffer, buffer.get(), frames);
+        fwrite(pcmBuffer, sizeof(int16_t), frames, outputFile);
         assert(written > 0);
     }
 
-    sf_close(sf);
+//    sf_close(sf);
+    free(pcmBuffer);
+    fclose(outputFile);
 }
 
 NoiseReduction::Settings::Settings() {
