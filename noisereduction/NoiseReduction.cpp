@@ -1097,7 +1097,7 @@ void NoiseReduction::ReduceNoise(const char* outputPath) {
     FILE* outputFile = fopen(outputPath, "wb");
 
     if (outputFile == nullptr) {
-        printf("%s error: failed to open %s\n", outputPath);
+        printf("%s error: failed to open %s\n", __FUNCTION__, outputPath);
         return;
     }
 
