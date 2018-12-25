@@ -1,6 +1,5 @@
 #pragma once
 
-#include <sndfile.h>
 #include <assert.h>
 
 typedef struct SndInfo {
@@ -12,7 +11,7 @@ typedef struct SndInfo {
     int	seekable ;
 };
 
-struct SndContext {
+typedef struct SndContext {
     SndInfo info;
 };
 

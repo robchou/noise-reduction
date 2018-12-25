@@ -7,7 +7,6 @@
 **********************************************************************/
 #pragma once
 
-#include <sndfile.h>
 #include <memory>
 #include "Utils.h"
 #define DB_TO_LINEAR(x) (pow(10.0, (x) / 20.0))

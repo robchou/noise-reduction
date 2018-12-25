@@ -1,6 +1,5 @@
 #include <iostream>
 #include "NoiseReduction.h"
-#include <sndfile.h>
 #include "loguru.hpp"
 #include "Utils.h"
 #include "cxxopts.hpp"
@@ -37,18 +36,15 @@ int main(int argc, char * argv[]) {
 
     const char* out = "/Users/robin/Desktop/out.pcm";
 
-    SndInfo inputCtxInfo = SndInfo {
-        .channels = 1,
-        .samplerate = 8000,
-    };
+    SndInfo inputCtxInfo;
+    inputCtxInfo.samplerate = 8000;
+    inputCtxInfo.channels = 1;
 
-    auto ctx = SndContext {
-        .info = inputCtxInfo,
-    };
+    SndContext ctx;
+    ctx.info = inputCtxInfo;
 
-    auto noiseContext = SndContext {
-        .info = inputCtxInfo,
-    };
+    SndContext noiseContext;
+    noiseContext.info = inputCtxInfo;
 
     NoiseReduction::Settings settings;
 //    settings.mNewSensitivity = result["sensitivity"].as<float>();

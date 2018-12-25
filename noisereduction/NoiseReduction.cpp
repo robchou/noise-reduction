@@ -26,17 +26,17 @@
 *//****************************************************************//**
 */
 #include "NoiseReduction.h"
+#include <string.h>
 #include <math.h>
 #include <assert.h>
-#include <sndfile.h>
 #include <exception>
 #include <sys/stat.h>
 #include "loguru.hpp"
 #include "NoiseReduction.h"
 #include "RealFFTf.h"
-#include "Types.h"
+#include "types.h"
 
-const auto OUTPUT_FORMAT = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+//const auto OUTPUT_FORMAT = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
 enum DiscriminationMethod {
     DM_MEDIAN,
@@ -119,19 +119,19 @@ struct OutputTrack {
         this->length = newLength;
     }
 
-    void WriteToDisk(const char *filename) {
-        // When opening a file for write, the caller must fill in structure members samplerate, channels, and format.
-        SF_INFO info = {
-            .channels = 1,
-            .format = OUTPUT_FORMAT,
-            .samplerate = this->samplerate,
-         };
-        SNDFILE* sf = sf_open(filename, SFM_WRITE, &info);
-        assert(sf);
-        sf_count_t written = sf_write_float(sf, &data[0], this->length);
-        assert(written > 0);
-        sf_close(sf);
-    }
+    //void WriteToDisk(const char *filename) {
+        //// When opening a file for write, the caller must fill in structure members samplerate, channels, and format.
+        //SF_INFO info = {
+            //.channels = 1,
+            //.format = OUTPUT_FORMAT,
+            //.samplerate = this->samplerate,
+         //};
+        //SNDFILE* sf = sf_open(filename, SFM_WRITE, &info);
+        //assert(sf);
+        //sf_count_t written = sf_write_float(sf, &data[0], this->length);
+        //assert(written > 0);
+        //sf_close(sf);
+    //}
 };
 
 struct InputTrack {
@@ -928,7 +928,7 @@ bool NoiseReductionWorker::ProcessOne(Statistics &statistics, InputTrack& inputT
      */
     StartNewTrack();
 
-    const sf_count_t BUFFER_SIZE = 500000; // 2mb
+    const size_t BUFFER_SIZE = 500000; // 2mb
     FloatVector buffer(BUFFER_SIZE);
 
     bool bLoopSuccess = true;

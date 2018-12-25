@@ -32,11 +32,11 @@ $(shell mkdir -p $(dir $(OBJS)) >/dev/null)
 $(shell mkdir -p $(dir $(DEPS)) >/dev/null)
 
 # C compiler
-CC := clang
+CC := gcc
 # C++ compiler
-CXX := clang++
+CXX := g++
 # linker
-LD := clang++
+#LD := ld
 # tar
 TAR := tar
 
@@ -45,9 +45,9 @@ CFLAGS := -std=c11
 # C++ flags
 CXXFLAGS := -std=c++11
 # C/C++ flags
-CPPFLAGS := -Wall -Wextra -pedantic
+CPPFLAGS := -Wall -Wextra -pedantic -fpermissive
 # linker flags
-LDFLAGS := -lsndfile
+#LDFLAGS := -lsndfile
 # flags required for dependency generation; passed to compilers
 DEPFLAGS = -MT $@ -MD -MP -MF $(DEPDIR)/$*.Td
 
