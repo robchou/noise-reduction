@@ -8,7 +8,6 @@ $(shell mkdir -p $(BINDIR) >/dev/null)
 SRCS := \
     noisereduction/main.cpp \
     noisereduction/NoiseReduction.cpp \
-    noisereduction/Utils.cpp \
     noisereduction/RealFFTf.cpp \
     noisereduction/Extensions.cpp
 
