@@ -43,7 +43,7 @@ TAR := tar
 # C flags
 CFLAGS := -std=c11
 # C++ flags
-CXXFLAGS := -std=c++14
+CXXFLAGS := -std=c++11
 # C/C++ flags
 CPPFLAGS := -Wall -Wextra -pedantic -fpermissive
 # linker flags
@@ -77,7 +77,7 @@ dist: $(DISTFILES)
 
 .PHONY: clean
 clean:
-	$(RM) -r $(OBJDIR) $(DEPDIR)
+	$(RM) -r $(OBJDIR) $(DEPDIR) $(BIN)
 
 .PHONY: distclean
 distclean: clean
