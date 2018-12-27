@@ -43,8 +43,10 @@ int main(int argc, char * argv[]) {
     profile.seekg(0, std::ios::end);
     int profileSize = profile.tellg();
     profile.seekg(std::ios::beg);
-    auto profileBuffer = std::make_unique<int16_t[]>(profileSize / 2);
-    profile.read(reinterpret_cast<char *>(profileBuffer.get()), profileSize);
+//    auto profileBuffer = std::make_unique<int16_t[]>(profileSize / 2);
+    auto profileBuffer = new int16_t[profileSize / 2];
+//    profile.read(reinterpret_cast<char *>(profileBuffer.get()), profileSize);
+    profile.read(reinterpret_cast<char *>(profileBuffer), profileSize);
     profile.close();
 
 
@@ -55,7 +57,8 @@ int main(int argc, char * argv[]) {
     NoiseReduction reduction(settings, 8000, 1);
 
     std::cout << "Profiling noise..." << std::endl;
-    reduction.ExtractNoiseProfile(profileBuffer.get(), profileSize);
+//    reduction.ExtractNoiseProfile(profileBuffer.get(), profileSize);
+    reduction.ExtractNoiseProfile(profileBuffer, profileSize);
     std::cout << "Denoising..." << std::endl;
     std::ifstream src;
     std::ofstream out;
@@ -77,13 +80,21 @@ int main(int argc, char * argv[]) {
     src.seekg(0, std::ios::end);
     int srcSize = src.tellg();
     src.seekg(std::ios::beg);
-    auto srcBuffer = std::make_unique<int16_t[]>(srcSize / 2);
-    auto outBuffer = std::make_unique<int16_t[]>(srcSize / 2);
-    src.read(reinterpret_cast<char *>(srcBuffer.get()), srcSize);
+//    auto srcBuffer = std::make_unique<int16_t[]>(srcSize / 2);
+//    auto outBuffer = std::make_unique<int16_t[]>(srcSize / 2);
+    int16_t *srcBuffer = new int16_t[srcSize/2];
+    int16_t *outBuffer = new int16_t[srcSize/2];
+//    src.read(reinterpret_cast<char *>(srcBuffer.get()), srcSize);
+    src.read(reinterpret_cast<char *>(srcBuffer), srcSize);
     src.close();
-    reduction.ReduceNoise(srcBuffer.get(), outBuffer.get(), srcSize);
+//    reduction.ReduceNoise(srcBuffer.get(), outBuffer.get(), srcSize);
+    reduction.ReduceNoise(srcBuffer, outBuffer, srcSize);
+    delete [] srcBuffer;
 
-    out.write(reinterpret_cast<const char *>(outBuffer.get()), srcSize);
+//    out.write(reinterpret_cast<const char *>(outBuffer.get()), srcSize);
+    out.write(reinterpret_cast<const char *>(outBuffer), srcSize);
+    delete [] outBuffer;
+    delete [] profileBuffer;
     out.close();
 
     return 0;
